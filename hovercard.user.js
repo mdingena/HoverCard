@@ -5,7 +5,7 @@
 // @grant       none
 // @match       *://boardgames.stackexchange.com/questions/*
 // @match       *://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.6
+// @version     1.0.7
 // ==/UserScript==
 
 var userscript = function($) {
@@ -84,7 +84,7 @@ var userscript = function($) {
 				if( pair[ 0 ].toLowerCase() == 'name' || pair[ 0 ].toLowerCase() == 'multiverseid' ) {
 					result.success = true;
 					result.key = pair[ 0 ];
-					result.value = pair[ 1 ].replace( '%5d', '' ).replace( '%5b', '' ).replace( '%2b', '' );
+					result.value = decodeURIComponent( pair[ 1 ] ).replace( ']+[', ' ' ).replace( ']', '' ).replace( '[', '' ).replace( '+', '' );
 					break;
 				}
 			}
