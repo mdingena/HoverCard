@@ -5,7 +5,7 @@
 // @grant       none
 // @match       *://boardgames.stackexchange.com/questions/*
 // @match       *://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.3
+// @version     1.0.4
 // ==/UserScript==
 
 var userscript = function($) {
@@ -46,7 +46,7 @@ var userscript = function($) {
 			];
 			return 'a[href*="' + urls.join( '" i], a[href*="' ) + '" i]';
 		},
-		imageUrl    : '//gatherer.wizards.com/Handlers/Image.ashx?type=card&',
+		imageUrl    : 'http://gatherer.wizards.com/Handlers/Image.ashx?type=card&',
 		extractCard : function( href, key ) {
 			var query;
 			if( href.indexOf( '#' ) == -1 ) {
