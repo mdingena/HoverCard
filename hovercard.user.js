@@ -5,7 +5,7 @@
 // @grant       none
 // @match       *://boardgames.stackexchange.com/questions/*
 // @match       *://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.7
+// @version     1.0.8
 // ==/UserScript==
 
 var userscript = function($) {
@@ -84,7 +84,7 @@ var userscript = function($) {
 				if( pair[ 0 ].toLowerCase() == 'name' || pair[ 0 ].toLowerCase() == 'multiverseid' ) {
 					result.success = true;
 					result.key = pair[ 0 ];
-					result.value = decodeURIComponent( pair[ 1 ] ).replace( ']+[', ' ' ).replace( ']', '' ).replace( '[', '' ).replace( '+', '' );
+					result.value = decodeURIComponent( pair[ 1 ] ).replace( /\]\+\[/g, ' ' ).replace( /[\+\[\]]/g, '' );
 					break;
 				}
 			}
@@ -128,7 +128,6 @@ var userscript = function($) {
 			var card = hoverCard.extractCard( $( anchor ).attr( 'href' ) );
 			if( !card.success ) { return false; }
 			var html = '<img src="' + hoverCard.imageUrl + card.key + '=' + card.value + '" />';
-			console.log( hoverCard.imageUrl + card.key + '=' + card.value );
 			var pos  = hoverCard.calcPos( anchor );
 			$( '#hoverCard' ).stop().hide().html( html ).fadeTo( 350, 1.0 ).css({
 				left : Math.floor( pos.left ),
