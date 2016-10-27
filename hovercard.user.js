@@ -5,7 +5,7 @@
 // @grant       none
 // @match       *://boardgames.stackexchange.com/questions/*
 // @match       *://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.4
+// @version     1.0.5
 // ==/UserScript==
 
 var userscript = function($) {
@@ -13,6 +13,7 @@ var userscript = function($) {
 	var hoverCss = '\
 		#hoverCard { \
 			position: fixed; \
+			z-index: 1; \
 			display: none; \
 			width: 223px; \
 			height: 311px; \
