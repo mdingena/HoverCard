@@ -5,7 +5,7 @@
 // @grant       none
 // @match       *://boardgames.stackexchange.com/questions/*
 // @match       *://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.5
+// @version     1.0.6
 // ==/UserScript==
 
 var userscript = function($) {
@@ -41,14 +41,35 @@ var userscript = function($) {
 	
 	var hoverCard = {
 		selectors   : function() {
+			// THIS METHOD IS NO LONGER USED AS OF v1.0.6. Added lines 56,60-72 to fix this.
+			// Chrome no longer seems to like [... i] selectors for case-insensitive matching.
+			// This makes the code a bit more clunky because I can no longer filter the
+			// selectors directly, but must match ALL hyperlink anchors and see if they match
+			// any of the MTG urls below after forcing them to lowercase.
 			var urls = [
 				  '://www.wizards.com/magic/autocard.asp'
 				, '://gatherer.wizards.com/Pages/Card/Details.aspx'
+				, '://gatherer.wizards.com/Pages/Search/Default.aspx'
+				, '://gatherer.wizards.com/Handlers/Image.ashx'
 			];
-			return 'a[href*="' + urls.join( '" i], a[href*="' ) + '" i]';
+			//return 'a[href*="' + urls.join( '" i], a[href*="' ) + '" i]';
+			return urls;
 		},
 		imageUrl    : 'http://gatherer.wizards.com/Handlers/Image.ashx?type=card&',
 		extractCard : function( href, key ) {
+			var match = false;
+			var urls = this.selectors();
+			urls.forEach( function( url ) {
+				if( href.toLowerCase().indexOf( url.toLowerCase() ) > -1 ) {
+					match = true;
+					return;
+				}
+			});
+			if( !match ) {
+				return {
+					success : false
+				};
+			}
 			var query;
 			if( href.indexOf( '#' ) == -1 ) {
 				query = href.substring( href.indexOf( '?' ) + 1 );
@@ -63,7 +84,7 @@ var userscript = function($) {
 				if( pair[ 0 ].toLowerCase() == 'name' || pair[ 0 ].toLowerCase() == 'multiverseid' ) {
 					result.success = true;
 					result.key = pair[ 0 ];
-					result.value = pair[ 1 ];
+					result.value = pair[ 1 ].replace( '%5d', '' ).replace( '%5b', '' ).replace( '%2b', '' );
 					break;
 				}
 			}
@@ -107,6 +128,7 @@ var userscript = function($) {
 			var card = hoverCard.extractCard( $( anchor ).attr( 'href' ) );
 			if( !card.success ) { return false; }
 			var html = '<img src="' + hoverCard.imageUrl + card.key + '=' + card.value + '" />';
+			console.log( hoverCard.imageUrl + card.key + '=' + card.value );
 			var pos  = hoverCard.calcPos( anchor );
 			$( '#hoverCard' ).stop().hide().html( html ).fadeTo( 350, 1.0 ).css({
 				left : Math.floor( pos.left ),
@@ -122,7 +144,7 @@ var userscript = function($) {
 	
 	StackExchange.ready( function() {
 		hoverCard.initDom();
-		$( 'body' ).on( 'mouseenter mouseleave', hoverCard.selectors(), function( e ) {
+		$( 'body' ).on( 'mouseenter mouseleave', 'a', function( e ) {
 			if( e.type == 'mouseenter' ) {
 				hoverCard.showCard( this );
 			} else if( e.type == 'mouseleave' ) {
