@@ -4,7 +4,7 @@
 // @grant       none
 // @include     http://boardgames.stackexchange.com/questions/*
 // @include     http://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.1
+// @version     1.0.2
 // @namespace https://greasyfork.org/users/38387
 // ==/UserScript==
 
@@ -105,7 +105,9 @@ var userscript = function($) {
 			});
 		},
 		hide : function() {
-			$( '#hoverCard' ).stop().fadeTo( 350, 0.0 );
+			$( '#hoverCard' ).stop().fadeTo( 350, 0.0, function() {
+				$( this ).hide();
+			});
 		}
 	};
 	
