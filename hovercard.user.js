@@ -1,18 +1,53 @@
 // ==UserScript==
 // @name        HoverCard: BoardGames.SE MTG Gatherer Card Link Rollover
+// @namespace   https://greasyfork.org/users/38387
 // @description Display MTG cards in tooltip when hovering over Gatherer and Autocard links
 // @grant       none
-// @include     http://boardgames.stackexchange.com/questions/*
-// @include     http://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.2
-// @namespace https://greasyfork.org/users/38387
+// @match       *://boardgames.stackexchange.com/questions/*
+// @match       *://meta.boardgames.stackexchange.com/questions/*
+// @version     1.0.3
 // ==/UserScript==
 
 var userscript = function($) {
 	
+	var hoverCss = '\
+		#hoverCard { \
+			position: fixed; \
+			display: none; \
+			width: 223px; \
+			height: 311px; \
+			background: #191919; \
+			background: linear-gradient(to bottom,#191919 0%,#282828 100%); \
+			border-radius: 11px; \
+			overflow: hidden; \
+			box-shadow: 0 0 7px #333; \
+		} \
+		#hoverCard::before { \
+			position: absolute; \
+			bottom: 0; \
+			width: 100%; \
+			height: 50px; \
+			color: #999; \
+			text-align: center; \
+			font-weight: bold; \
+			text-shadow: 0 -2px 2px #191919, 0 1px 1px #444; \
+			content: "Gathering..."; \
+		} \
+		#hoverCard img { \
+			position: absolute; \
+		} \
+	';
+	
 	var hoverCard = {
-		url  : 'http://gatherer.wizards.com/Handlers/Image.ashx?type=card&',
-		card : function( href, key ) {
+		selectors   : function() {
+			var urls = [
+				  '://www.wizards.com/magic/autocard.asp'
+				, '://gatherer.wizards.com/Pages/Card/Details.aspx'
+			];
+			return 'a[href*="' + urls.join( '" i], a[href*="' ) + '" i]';
+		},
+		imageUrl    : '//gatherer.wizards.com/Handlers/Image.ashx?type=card&',
+		extractCard : function( href, key ) {
 			var query;
 			if( href.indexOf( '#' ) == -1 ) {
 				query = href.substring( href.indexOf( '?' ) + 1 );
@@ -24,7 +59,7 @@ var userscript = function($) {
 			result.success = false;
 			for( var i = 0; i < query.length; ++i ) {
 				var pair = query[ i ].split( '=' );
-				if( pair[ 0 ] == 'name' || pair[ 0 ] == 'multiverseid' ) {
+				if( pair[ 0 ].toLowerCase() == 'name' || pair[ 0 ].toLowerCase() == 'multiverseid' ) {
 					result.success = true;
 					result.key = pair[ 0 ];
 					result.value = pair[ 1 ];
@@ -33,50 +68,13 @@ var userscript = function($) {
 			}
 			return result;
 		},
-		init : function() {
-			var css  = '#hoverCard {';
-				css += 'position: fixed; ';
-				css += 'display: none; ';
-				css += 'width: 223px; ';
-				css += 'height: 311px; ';
-				css += 'background: #191919; ';
-				css += 'background: -moz-linear-gradient(top,  #191919 0%, #282828 100%); ';
-				css += 'background: -webkit-linear-gradient(top,  #191919 0%,#282828 100%); ';
-				css += 'background: linear-gradient(to bottom,  #191919 0%,#282828 100%); ';
-				css += 'filter: progid:DXImageTransform.Microsoft.gradient( startColorstr="#191919", endColorstr="#282828",GradientType=0 ); ';
-				css += 'border-radius: 11px; ';
-				css += 'overflow: hidden; ';
-				css += 'box-shadow: 0 0 7px #333; ';
-				css += '}';
-				css += '#hoverCard::before {';
-				css += 'position: absolute; ';
-				css += 'bottom: 0; ';
-				css += 'width: 100%; ';
-				css += 'height: 50px; ';
-				css += 'color: #999; ';
-				css += 'text-align: center; ';
-				css += 'font-weight: bold; ';
-				css += 'text-shadow: 0 -2px 2px #191919, 0 1px 1px #444; ';
-				css += 'content: "Gathering...";';
-				css += '}';
-				css += '#hoverCard img {';
-				css += 'position: absolute; ';
-				css += '}';
-			var styleHead = $( '<style>' ).attr( 'id', 'mtg-hovercard' ).text( css ),
+		initDom     : function() {
+			var styleHead = $( '<style>' ).attr( 'id', 'mtg-hovercard' ).text( hoverCss ),
 				popupHtml = '<div id="hoverCard"></div>';
 			$( 'head' ).append( styleHead );
 			$( '#mainbar' ).append( popupHtml );
 		},
-		show : function( anchor ) {
-			var card = hoverCard.card( $( anchor ).attr( 'href' ) );
-			if( !card.success ) {
-				return false;
-			}
-			var html = '<img src="' + hoverCard.url + card.key + '=' + card.value + '" />';
-			$( '#hoverCard' ).stop().css({
-				top  : 0,
-				left : 0
-			}).hide().html( html );
+		calcPos     : function( anchor ) {
 			var popupWidth    = 223,
 				popupHeight   = 311,
 				popupMaxWidth = $( '#mainbar' ).width(),
@@ -99,12 +97,22 @@ var userscript = function($) {
 			}
 			offsetLeft = offsetLeft < 0 ? anchorPosRel.left : offsetLeft;
 			offsetLeft = anchorWidth > popupMaxWidth * 0.7 ? anchorPosRel.left : offsetLeft;
-			$( '#hoverCard' ).fadeTo( 350, 1.0 ).css({
-				top  : Math.floor( offsetTop ),
-				left : Math.floor( offsetLeft )
+			return {
+				left : offsetLeft,
+				top  : offsetTop
+			};
+		},
+		showCard    : function( anchor ) {
+			var card = hoverCard.extractCard( $( anchor ).attr( 'href' ) );
+			if( !card.success ) { return false; }
+			var html = '<img src="' + hoverCard.imageUrl + card.key + '=' + card.value + '" />';
+			var pos  = hoverCard.calcPos( anchor );
+			$( '#hoverCard' ).stop().hide().html( html ).fadeTo( 350, 1.0 ).css({
+				left : Math.floor( pos.left ),
+				top  : Math.floor( pos.top )
 			});
 		},
-		hide : function() {
+		hideCard    : function() {
 			$( '#hoverCard' ).stop().fadeTo( 350, 0.0, function() {
 				$( this ).hide();
 			});
@@ -112,12 +120,12 @@ var userscript = function($) {
 	};
 	
 	StackExchange.ready( function() {
-		hoverCard.init();
-		$( 'body' ).on( 'mouseenter mouseleave', 'a[href^="http://www.wizards.com/magic/autocard.asp"], a[href^="http://gatherer.wizards.com/Pages/Card/Details.aspx"]', function( e ) {
+		hoverCard.initDom();
+		$( 'body' ).on( 'mouseenter mouseleave', hoverCard.selectors(), function( e ) {
 			if( e.type == 'mouseenter' ) {
-				hoverCard.show( this );
+				hoverCard.showCard( this );
 			} else if( e.type == 'mouseleave' ) {
-				hoverCard.hide();
+				hoverCard.hideCard();
 			}
 		});
     });
