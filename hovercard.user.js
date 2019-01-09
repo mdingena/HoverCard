@@ -5,7 +5,7 @@
 // @grant       none
 // @match       *://boardgames.stackexchange.com/questions/*
 // @match       *://meta.boardgames.stackexchange.com/questions/*
-// @version     1.0.9
+// @version     1.1.0
 // ==/UserScript==
 
 var userscript = function($) {
@@ -36,6 +36,7 @@ var userscript = function($) {
 		} \
 		#hoverCard img { \
 			position: absolute; \
+			max-width: 100%; \
 		} \
 	';
 	
@@ -55,7 +56,7 @@ var userscript = function($) {
 			//return 'a[href*="' + urls.join( '" i], a[href*="' ) + '" i]';
 			return urls;
 		},
-		imageUrl    : 'http://gatherer.wizards.com/Handlers/Image.ashx?type=card&',
+		imageUrl    : 'https://api.scryfall.com/cards/named?format=image&version=normal&fuzzy=',
 		extractCard : function( href, key ) {
 			var match = false;
 			var urls = this.selectors();
@@ -127,7 +128,7 @@ var userscript = function($) {
 		showCard    : function( anchor ) {
 			var card = hoverCard.extractCard( $( anchor ).attr( 'href' ) );
 			if( !card.success ) { return false; }
-			var html = '<img src="' + hoverCard.imageUrl + card.key + '=' + card.value + '" />';
+			var html = '<img src="' + hoverCard.imageUrl + card.value + '" />';
 			var pos  = hoverCard.calcPos( anchor );
 			$( '#hoverCard' ).stop().hide().html( html ).fadeTo( 350, 1.0 ).css({
 				left : Math.floor( pos.left ),
